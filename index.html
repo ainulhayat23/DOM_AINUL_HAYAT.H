@@ -1,207 +1,99 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Daily Activity Tracker</title>
-
-    <style>
-        body {
-            font-family: Arial;
-            text-align: center;
-            background: linear-gradient(to right, #eef2f3, #dfe9f3);
-            padding: 20px;
-        }
-
-        input, select, button {
-            padding: 8px;
-            margin: 5px;
-            border-radius: 6px;
-        }
-
-        .tambah { background: green; color: white; }
-        .edit { background: orange; color: white; }
-        .hapus { background: red; color: white; }
-
-        ol {
-            margin-top: 20px;
-            padding: 0;
-        }
-
-        li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            margin: 10px auto;
-            padding: 12px;
-            border-radius: 10px;
-            width: 60%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .kiri {
-            text-align: left;
-            max-width: 70%;
-            word-wrap: break-word;
-        }
-
-        .kanan button {
-            margin-left: 5px;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Student Productivity Analyzer</title>
+  <style>
+    body { font-family: Arial; margin: 24px; max-width: 700px; }
+    input, button { padding: 8px; margin: 4px; }
+    #list, #result {
+      border: 1px solid #ddd; padding: 10px; margin-top: 10px; white-space: pre-line;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Daily Activity Tracker Ainul Hayat. H</h2>
+<h2>Student Productivity Analyzer</h2>
+<p>Masukkan aktivitas harian untuk dianalisis oleh AI.</p>
 
-<input type="text" id="aktivitas" placeholder="Aktivitas">
+<input id="act" placeholder="contoh: belajar, game">
+<input id="min" type="number" placeholder="menit">
 
-<select id="tipe">
-    <option value="durasi">Durasi</option>
-    <option value="event">Event</option>
-</select>
+<button onclick="tambah()">Tambah</button>
+<button onclick="analisis()">Analisis AI</button>
 
-<div id="durasiInput">
-    <input type="time" id="mulai">
-    <input type="time" id="selesai">
-</div>
+<p id="total">Total: 0 menit</p>
 
-<div id="eventInput" style="display:none;">
-    <input type="time" id="waktu">
-</div>
+<h3>Aktivitas:</h3>
+<div id="list">Belum ada data</div>
 
-<button id="tambah" class="tambah">Tambah</button>
-
-<p id="total">Total: 0 menit (0 aktivitas)</p>
-<ol id="list"></ol>
+<h3>Analisis AI:</h3>
+<div id="result">Belum dianalisis</div>
 
 <script>
-const aktivitasInput = document.getElementById("aktivitas");
-const tipeSelect = document.getElementById("tipe");
-const mulaiInput = document.getElementById("mulai");
-const selesaiInput = document.getElementById("selesai");
-const waktuInput = document.getElementById("waktu");
+let data = [];
 
-const durasiDiv = document.getElementById("durasiInput");
-const eventDiv = document.getElementById("eventInput");
+function render() {
+  let total = 0;
+  let text = "";
 
-const tombolTambah = document.getElementById("tambah");
-const totalText = document.getElementById("total");
-const listAktivitas = document.getElementById("list");
+  data.forEach((d, i) => {
+    total += d.m;
+    text += (i+1) + ". " + d.a + " - " + d.m + " menit\n";
+  });
 
-let totalMenit = 0;
-let jumlahAktivitas = 0;
+  document.getElementById("total").innerText =
+    "Total: " + total + " menit";
 
-tipeSelect.addEventListener("change", function() {
-    if (tipeSelect.value === "durasi") {
-        durasiDiv.style.display = "block";
-        eventDiv.style.display = "none";
-    } else {
-        durasiDiv.style.display = "none";
-        eventDiv.style.display = "block";
-    }
-});
-
-function hitungDurasi(mulai, selesai) {
-    const [j1, m1] = mulai.split(":").map(Number);
-    const [j2, m2] = selesai.split(":").map(Number);
-    return (j2 * 60 + m2) - (j1 * 60 + m1);
+  document.getElementById("list").innerText =
+    text || "Belum ada data";
 }
 
-function updateTotal() {
-    totalText.textContent =
-        "Total: " + totalMenit + " menit (" + jumlahAktivitas + " aktivitas)";
+function tambah() {
+  const a = document.getElementById("act").value;
+  const m = Number(document.getElementById("min").value);
+
+  if (!a || !m) return alert("Isi data dengan benar");
+
+  data.push({ a, m });
+
+  document.getElementById("act").value = "";
+  document.getElementById("min").value = "";
+
+  render();
 }
 
-tombolTambah.addEventListener("click", function () {
-    const aktivitas = aktivitasInput.value;
-    const tipe = tipeSelect.value;
+async function analisis() {
+  if (data.length === 0) return;
 
-    if (aktivitas === "") {
-        alert("Isi aktivitas!");
-        return;
-    }
+  document.getElementById("result").innerText = "Menganalisis...";
 
-    const item = document.createElement("li");
+  const daftar = data.map((d, i) =>
+    (i+1) + ". " + d.a + " - " + d.m + " menit"
+  ).join("\n");
 
-    const kiri = document.createElement("span");
-    kiri.className = "kiri";
-
-    const kanan = document.createElement("span");
-    kanan.className = "kanan";
-
-    let durasiLama = 0;
-    let teksWaktu = "";
-
-    if (tipe === "durasi") {
-        const mulai = mulaiInput.value;
-        const selesai = selesaiInput.value;
-
-        if (mulai === "" || selesai === "") {
-            alert("Isi waktu!");
-            return;
-        }
-
-        const durasi = hitungDurasi(mulai, selesai);
-        if (durasi <= 0) {
-            alert("Waktu tidak valid!");
-            return;
-        }
-
-        durasiLama = durasi;
-        totalMenit += durasi;
-
-        teksWaktu = mulai + " s/d " + selesai + " (" + durasi + " menit)";
-    } else {
-        const waktu = waktuInput.value;
-
-        if (waktu === "") {
-            alert("Isi waktu!");
-            return;
-        }
-
-        teksWaktu = waktu + " (event)";
-    }
-
-    kiri.textContent = aktivitas + " — " + teksWaktu;
-
-    const btnEdit = document.createElement("button");
-    btnEdit.textContent = "Edit";
-    btnEdit.className = "edit";
-
-    const btnHapus = document.createElement("button");
-    btnHapus.textContent = "Hapus";
-    btnHapus.className = "hapus";
-
-    kanan.appendChild(btnEdit);
-    kanan.appendChild(btnHapus);
-
-    item.appendChild(kiri);
-    item.appendChild(kanan);
-    listAktivitas.appendChild(item);
-
-    jumlahAktivitas++;
-    updateTotal();
-
-    aktivitasInput.value = "";
-    mulaiInput.value = "";
-    selesaiInput.value = "";
-    waktuInput.value = "";
-
-    btnHapus.addEventListener("click", function () {
-        listAktivitas.removeChild(item);
-        totalMenit -= durasiLama;
-        jumlahAktivitas--;
-        updateTotal();
+  try {
+    const res = await fetch("https://activity-ai-backend.vercel.app/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        activities: daftar
+      })
     });
 
-    btnEdit.addEventListener("click", function () {
-        const aktivitasBaru = prompt("Edit aktivitas:", aktivitas);
-        if (!aktivitasBaru) return;
+    const json = await res.json();
 
-        kiri.textContent = aktivitasBaru + " — " + teksWaktu;
-    });
-});
+    document.getElementById("result").innerText =
+      json.result || json.error;
+
+  } catch {
+    document.getElementById("result").innerText = "Gagal koneksi ke AI";
+  }
+}
+
+render();
 </script>
 
 </body>
